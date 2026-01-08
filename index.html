@@ -150,9 +150,18 @@
         <form id="reportForm" onsubmit="event.preventDefault(); generateDocx();">
 
             <div class="form-group">
-                <label for="templateFile">Template File (optional)</label>
-                <input type="file" id="templateFile" accept=".docx">
-                <div class="hint">Select a .docx template. Use "tempfile.docx" if empty.</div>
+                <label for="templateSelect">Template Source</label>
+                <select id="templateSelect" onchange="toggleTemplateInput()">
+                    <option value="tempfile.docx" selected>Standard Report (tempfile.docx)</option>
+                    <option value="tocfront.docx">Report with TOC (tocfront.docx)</option>
+                    <option value="temp.docx">Simple Template (temp.docx)</option>
+                    <option value="custom">Upload Custom File...</option>
+                </select>
+
+                <div id="customFileContainer" style="display: none; margin-top: 0.5rem;">
+                    <input type="file" id="templateFile" accept=".docx">
+                    <div class="hint">Select a .docx template from your device.</div>
+                </div>
             </div>
 
             <div class="form-group">
@@ -250,6 +259,18 @@
                 }
             };
 
+
+
+            function toggleTemplateInput() {
+                const select = document.getElementById('templateSelect');
+                const container = document.getElementById('customFileContainer');
+                if (select.value === 'custom') {
+                    container.style.display = 'block';
+                } else {
+                    container.style.display = 'none';
+                }
+            }
+
             $('#labdate').nepaliDatePicker(config);
             $('#submitdate').nepaliDatePicker(config);
         });
@@ -301,25 +322,30 @@
 
                 // Load Template
                 let arrayBuffer;
-                const fileInput = document.getElementById('templateFile');
+                const templateSelect = document.getElementById('templateSelect').value;
 
-                if (fileInput.files.length > 0) {
-                    // Read from file input
-                    arrayBuffer = await fileInput.files[0].arrayBuffer();
+                if (templateSelect === 'custom') {
+                    // Custom user upload
+                    const fileInput = document.getElementById('templateFile');
+                    if (fileInput.files.length > 0) {
+                        arrayBuffer = await fileInput.files[0].arrayBuffer();
+                    } else {
+                        throw new Error("Please select a file to upload.");
+                    }
                 } else {
-                    // Try fetching default template
+                    // Fetch pre-defined template from server/repo
                     try {
-                        const response = await fetch("tempfile.docx");
-                        if (!response.ok) throw new Error("Default template not found.");
+                        const response = await fetch(templateSelect);
+                        if (!response.ok) throw new Error(`Could not find '${templateSelect}'.`);
                         arrayBuffer = await response.arrayBuffer();
 
-                        // Sanity check: is it a valid zip/docx size?
+                        // Sanity check
                         if (arrayBuffer.byteLength < 100) {
-                            throw new Error("Fetched file is too small/empty.");
+                            throw new Error("Fetched template file seems empty/corrupt.");
                         }
                     } catch (e) {
                         // Throw a specific error telling the user to pick the file
-                        throw new Error("Could not auto-load 'tempfile.docx' (likely due to browser security/CORS). Please click 'Choose File' above and select 'tempfile.docx' from your folder manually.");
+                        throw new Error(`Failed to load '${templateSelect}' automatically. If you are running this locally, basic fetch might be blocked. Please select 'Upload Custom File' and pick the file manually.`);
                     }
                 }
 
