@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Report Generator</title>
+
+    <!-- Libraries -->
+    <script src="https://unpkg.com/pizzip@3.1.5/dist/pizzip.min.js"></script>
+    <script src="https://unpkg.com/docxtemplater@3.44.0/build/docxtemplater.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <!-- Nepali Date Picker Libraries -->
+    <link href="https://unpkg.com/nepali-date-picker@2.0.1/dist/nepaliDatePicker.min.css" rel="stylesheet"
+        type="text/css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/nepali-date-picker@2.0.1/dist/jquery.nepaliDatePicker.min.js"
+        type="text/javascript"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-color: #1f2937;
+            --border-color: #e5e7eb;
+            --error-color: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            height: fit-content;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-align: center;
+            color: #111827;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="file"],
+        select {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: border-color 0.15s ease;
+            background: #fff;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        button {
+            width: 100%;
+            margin-top: 1.5rem;
+            padding: 0.75rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+        }
+
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .error {
+            color: var(--error-color);
+            background: #fef2f2;
+            border: 1px solid #fee2e2;
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .hint {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Lab Report Generator</h2>
+
+        <div id="error" class="error"></div>
+
+        <form id="reportForm" onsubmit="event.preventDefault(); generateDocx();">
+
+            <div class="form-group">
+                <label for="templateFile">Template File (optional)</label>
+                <input type="file" id="templateFile" accept=".docx">
+                <div class="hint">Select a .docx template. Use "tempfile.docx" if empty.</div>
+            </div>
+
+            <div class="form-group">
+                <label for="labno">Lab No</label>
+                <input type="text" id="labno" placeholder="e.g. 1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="labtitle">Lab Title</label>
+                <input type="text" id="labtitle" placeholder="e.g. Data Structures" required>
+            </div>
+
+            <div class="form-group">
+                <label for="studentname">Student Name</label>
+                <input type="text" id="studentname" required>
+            </div>
+
+            <div class="form-group">
+                <label for="rollno">TU Symbol No.</label>
+                <input type="text" id="rollno" required>
+            </div>
+
+            <div class="form-group">
+                <label for="subject">Subject</label>
+                <select id="subject" required onchange="updateTeacher()">
+                    <option value="" disabled selected>-- Select Subject --</option>
+                    <option value="Web Technology">Web Technology</option>
+                    <option value="Simulation and Modeling">Simulation and Modeling</option>
+                    <option value="Design And Analysis of Algorithms">Design And Analysis of Algorithms</option>
+                    <option value="Cryptography">Cryptography</option>
+                    <option value="System Analysis and Design">System Analysis and Design</option>
+                    <option value="Multimedia Computing">Multimedia Computing</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="teachername">Teacher Name</label>
+                <input type="text" id="teachername" placeholder="Auto-filled based on Subject" required>
+            </div>
+
+            <div class="form-group">
+                <label for="labdate">Lab Date (BS)</label>
+                <input type="text" id="labdate" placeholder="YYYY-MM-DD" required readonly
+                    style="background: white; cursor: pointer;">
+            </div>
+
+            <div class="form-group">
+                <label for="submitdate">Submitted Date (BS)</label>
+                <input type="text" id="submitdate" placeholder="YYYY-MM-DD" required readonly
+                    style="background: white; cursor: pointer;">
+            </div>
+
+            <button type="submit" id="generateBtn">Generate DOCX</button>
+        </form>
+    </div>
+
+    <script>
+        const courseMapping = {
+            "Web Technology": "Sarita Neupane",
+            "Simulation and Modeling": "Pramod Kumar Chaudhary",
+            "Design And Analysis of Algorithms": "Sherin Joshi",
+            "Cryptography": "Prakash Pandey",
+            "System Analysis and Design": "Hemant Mehta",
+            "Multimedia Computing": "Praveen Kumar Karn"
+        };
+
+        // Helper to convert Nepali digits to English
+        function convertToEnglish(str) {
+            const mapping = {
+                '०': '0', '१': '1', '२': '2', '३': '3', '४': '4',
+                '५': '5', '६': '6', '७': '7', '८': '8', '९': '9'
+            };
+            return str.split('').map(c => mapping[c] || c).join('');
+        }
+
+        // Initialize Nepali Date Picker
+        $(document).ready(function () {
+            const config = {
+                ndpYear: true,
+                ndpMonth: true,
+                ndpYearCount: 10,
+                dateFormat: "%y-%m-%d", // Lowercase y for year
+                closeOnDateSelect: true,
+                onChange: function () {
+                    const $input = $(this);
+                    // Force timeout to wait for library to set value
+                    setTimeout(() => {
+                        let val = $input.val();
+                        if (val) {
+                            $input.val(convertToEnglish(val));
+                            // Trigger change manually if needed by other listeners
+                            $input.trigger('change');
+                        }
+                    }, 200);
+                }
+            };
+
+            $('#labdate').nepaliDatePicker(config);
+            $('#submitdate').nepaliDatePicker(config);
+        });
+
+        function updateTeacher() {
+            const subjectSelect = document.getElementById('subject');
+            const teacherInput = document.getElementById('teachername');
+            const selectedSubject = subjectSelect.value;
+
+            if (courseMapping[selectedSubject]) {
+                teacherInput.value = courseMapping[selectedSubject];
+            }
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('error');
+            errorEl.innerText = message;
+            errorEl.style.display = 'block';
+        }
+
+        function clearError() {
+            const errorEl = document.getElementById('error');
+            errorEl.style.display = 'none';
+        }
+
+        async function generateDocx() {
+            clearError();
+            const btn = document.getElementById('generateBtn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "Generating...";
+
+            try {
+                // Collect Form Data
+                // Auto-convert dates to English numerals just in case the UI handler missed it
+                const rawLabDate = document.getElementById('labdate').value;
+                const rawSubmitDate = document.getElementById('submitdate').value;
+
+                const data = {
+                    labno: document.getElementById('labno').value.trim() || '1',
+                    labtitle: document.getElementById('labtitle').value.trim() || 'Report',
+                    studentname: document.getElementById('studentname').value.trim() || 'Student',
+                    rollno: document.getElementById('rollno').value.trim() || '000',
+                    teachername: document.getElementById('teachername').value.trim() || 'Teacher',
+                    subject: document.getElementById('subject').value.trim() || 'Subject',
+                    labdate: convertToEnglish(rawLabDate),
+                    submitdate: convertToEnglish(rawSubmitDate)
+                };
+
+                // Load Template
+                let arrayBuffer;
+                const fileInput = document.getElementById('templateFile');
+
+                if (fileInput.files.length > 0) {
+                    // Read from file input
+                    arrayBuffer = await fileInput.files[0].arrayBuffer();
+                } else {
+                    // Try fetching default template
+                    try {
+                        const response = await fetch("tempfile.docx");
+                        if (!response.ok) throw new Error("Default template not found.");
+                        arrayBuffer = await response.arrayBuffer();
+
+                        // Sanity check: is it a valid zip/docx size?
+                        if (arrayBuffer.byteLength < 100) {
+                            throw new Error("Fetched file is too small/empty.");
+                        }
+                    } catch (e) {
+                        // Throw a specific error telling the user to pick the file
+                        throw new Error("Could not auto-load 'tempfile.docx' (likely due to browser security/CORS). Please click 'Choose File' above and select 'tempfile.docx' from your folder manually.");
+                    }
+                }
+
+                // Initialize PizZip
+                let zip;
+                try {
+                    zip = new PizZip(arrayBuffer);
+                } catch (e) {
+                    throw new Error("The loaded file is not a valid DOCX/Zip file. Please select a valid .docx template.");
+                }
+
+                // AUTO-FIX: Remove spell-check tags that break placeholders
+                // Docxtemplater can fail if {tag} is split by <w:proofErr/>
+                try {
+                    const xmlPath = "word/document.xml";
+                    if (zip.files[xmlPath]) {
+                        let xml = zip.file(xmlPath).asText();
+                        // Regex to remove <w:proofErr ... /> tags (and related grammar tags if needed)
+                        // Removing w:proofErr, w:gramStart, w:gramEnd, w:lang
+                        const cleanXml = xml.replace(/<w:proofErr[^>]*\/>/g, "")
+                            .replace(/<w:gram[^>]*\/>/g, "")
+                            .replace(/<w:lang[^>]*\/>/g, "");
+                        zip.file(xmlPath, cleanXml);
+                    }
+                } catch (e) {
+                    console.warn("Could not auto-clean XML:", e);
+                }
+
+                const doc = new docxtemplater(zip, {
+                    paragraphLoop: true,
+                    linebreaks: true
+                });
+
+                // Render Data
+                doc.setData(data);
+                doc.render();
+
+                // Output File
+                const output = doc.getZip().generate({
+                    type: "blob",
+                    mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                });
+
+                // Save File
+                const safeName = data.studentname.replace(/[^a-z0-9]/gi, '_').substring(0, 50);
+                const filename = `Lab_Report_${data.labno}_${safeName}.docx`;
+                saveAs(output, filename);
+
+            } catch (e) {
+                console.error(e);
+                let msg = e.message;
+                if (e.properties && e.properties.errors) {
+                    msg = "Template Error: " + e.properties.errors.map(err => err.message).join(', ');
+                }
+                showError(msg);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+    </script>
+</body>
+
+</html>
