@@ -261,19 +261,19 @@
 
 
 
-            function toggleTemplateInput() {
-                const select = document.getElementById('templateSelect');
-                const container = document.getElementById('customFileContainer');
-                if (select.value === 'custom') {
-                    container.style.display = 'block';
-                } else {
-                    container.style.display = 'none';
-                }
-            }
-
             $('#labdate').nepaliDatePicker(config);
             $('#submitdate').nepaliDatePicker(config);
         });
+
+        function toggleTemplateInput() {
+            const select = document.getElementById('templateSelect');
+            const container = document.getElementById('customFileContainer');
+            if (select.value === 'custom') {
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+            }
+        }
 
         function updateTeacher() {
             const subjectSelect = document.getElementById('subject');
