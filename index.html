@@ -152,8 +152,8 @@
             <div class="form-group">
                 <label for="templateSelect">Template Source</label>
                 <select id="templateSelect" onchange="toggleTemplateInput()">
-                    <option value="tempfile.docx" selected>Standard Report (daatemplate.docx)</option>
-                    
+                    <option value="daatemplate.docx" selected>Standard Report (daatemplate.docx)</option>
+
                     <option value="custom">Upload Custom File...</option>
                 </select>
 
@@ -179,7 +179,7 @@
             </div>
 
             <div class="form-group">
-                <label for="rollno">TU Symbol No.</label>
+                <label for="rollno">Roll No.</label>
                 <input type="text" id="rollno" required>
             </div>
 
@@ -389,8 +389,13 @@
                 });
 
                 // Save File
-                const safeName = data.studentname.replace(/[^a-z0-9]/gi, '_').substring(0, 50);
-                const filename = `Lab_Report_${data.labno}_${safeName}.docx`;
+                // Shortform: firstname + subjectAcronym + labno (e.g. sujanwt2)
+                const firstName = data.studentname.trim().split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+                // Get acronym from subject (e.g. Web Technology -> wt)
+                // Use a fallback if subject is empty or has no matches
+                const subjectAcronym = (data.subject.match(/\b(\w)/g) || []).join('').toLowerCase();
+
+                const filename = `${firstName}${subjectAcronym}${data.labno}.docx`;
                 saveAs(output, filename);
 
             } catch (e) {
