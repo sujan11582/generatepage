@@ -12,12 +12,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
     <!-- Nepali Date Picker Libraries -->
-    <link href="https://unpkg.com/nepali-date-picker@2.0.1/dist/nepaliDatePicker.min.css" rel="stylesheet"
-        type="text/css" />
+    <link href="nepaliDatePicker.min.css" rel="stylesheet" type="text/css" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"
         integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/nepali-date-picker@2.0.1/dist/jquery.nepaliDatePicker.min.js"
-        type="text/javascript"></script>
+    <script src="jquery.nepaliDatePicker.min.js" type="text/javascript"></script>
 
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -238,6 +236,27 @@
 
         // Initialize Nepali Date Picker
         $(document).ready(function () {
+            // PATCH: Fix 2082 BS Poush having 29 days (should be 30)
+            const patchMonthData = (obj) => {
+                // Check for both casing styles just in case
+                const funcName = obj.getBsMonthDays ? 'getBsMonthDays' : (obj.GetBsMonthDays ? 'GetBsMonthDays' : null);
+                if (funcName) {
+                    const originalFunc = obj[funcName];
+                    obj[funcName] = function (year, month) {
+                        let days = originalFunc(year, month);
+                        // Poush 2082 is Month 9. Fix 29 -> 30.
+                        if (year === 2082 && month === 9 && days === 29) {
+                            return 30;
+                        }
+                        return days;
+                    };
+                    console.log(`[Fix] Patched ${funcName} for 2082 Poush data.`);
+                }
+            };
+
+            if (typeof calendarFunctions !== 'undefined') patchMonthData(calendarFunctions);
+            else if (typeof NepaliFunctions !== 'undefined') patchMonthData(NepaliFunctions);
+
             const config = {
                 ndpYear: true,
                 ndpMonth: true,
